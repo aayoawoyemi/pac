@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+nba_data_raw/
+_leaf_stints_*.json
+.DS_Store
