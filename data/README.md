@@ -41,19 +41,22 @@ points per TSA, `n_on` usable on-court games, `n_on_bad` games dropped for unrec
 ## Freeze note: the held-out carriers
 
 `heldout/carriers.json` is the build of 2026-09-21, the one the paper's held-out numbers (0.245 [0.204, 0.284]) come
-from. Rebuilding it on 2026-09-26, after the per-game rows were regenerated, gave the same 739 carriers and 10,676
-games and s = 0.244 [0.203, 0.282]. The paper reports the frozen build.
+from. The lineup stint files were rebuilt on 2026-09-26, and the new build reconciles more games with the box score
+(45,977 usable on-court games instead of 44,006). Rerunning `03_build_heldout_carriers.py` on the rebuilt stints gives
+the same 739 player-seasons and the same 10,676 missed games; only the on-court measurements change, and the estimate
+becomes s = 0.244 [0.203, 0.282]. The paper reports the frozen build; the next version will use the rebuilt one.
 
 ## Not in this repository
 
 | what | size | why | how to get it |
 |---|---|---|---|
-| raw play-by-play, `raw/nba_data_raw/nbastats_{year}.csv` (1997-2024) and `cdnnba_2025.csv` | 3.7 GB | size, and it belongs to its source | public NBA.com stats and CDN play-by-play endpoints |
+| raw play-by-play, `raw/nba_data_raw/nbastats_{year}.csv` (stats.nba.com, 1997-2024) and `cdnnba_{year}.csv` (NBA CDN feed, 2021-2025; PAC uses it from 2021) | 3.7 GB | size, and it belongs to its source | public NBA.com stats and CDN play-by-play endpoints |
 | NBA.com player dumps, `raw/_nba_pl_adv_{code}.json`, `raw/_nba_pl_base_{code}.json` | 21 MB | source data | NBA.com `leaguedashplayerstats` (Advanced, Base), regular season |
 | lineup stints, `raw/_leaf_stints_{code}.json` (2000-01 onward) | 352 MB | size | built from the play-by-play |
 | per-game PAC rows, `raw/_sv_pergame_{code}.json` | 188 MB | size; an intermediate | `01_build_player_values.py` |
 
-Only the build scripts (00-03) need these. Put them under `raw/` (or set `PAC_RAW_DIR`) to rebuild `data/` from
+Only the build scripts (00-03) need these. The scripts that download the play-by-play and segment it into lineup
+stints are part of the LUMA data pipeline and are not in this repository. Put them under `raw/` (or set `PAC_RAW_DIR`) to rebuild `data/` from
 scratch.
 
 ## Sources and terms

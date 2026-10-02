@@ -172,8 +172,9 @@ only the build scripts 00-03 need them, and [data/README.md](data/README.md) say
 | Iverson 2001-02 | TS Added -1.78/g (214th of 216), PAC +1.23 (60th) | 13 | `results/cases.md` |
 | Figure 1 pool | 6,315 player-seasons | 13, 19 | `results/cases.md` |
 
-The held-out input `data/heldout/carriers.json` is the 2026-09-21 build that the paper's numbers come from; a rebuild
-on 2026-09-26 from regenerated per-game rows gave 0.244 [0.203, 0.282] (see [data/README.md](data/README.md)).
+The held-out input `data/heldout/carriers.json` is the 2026-09-21 build that the paper's numbers come from. After the
+lineup stints were rebuilt on 2026-09-26, the same 739 player-seasons give 0.244 [0.203, 0.282] (see
+[data/README.md](data/README.md)).
 
 ```
 pac/        library code (paths, primary design, held-out design, PAC builder)

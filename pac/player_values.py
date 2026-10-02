@@ -43,10 +43,10 @@ import os
 import re
 import sys
 
-from _nba_box_ev_decade import iter_games, fill_legacy_teams_and_rebounds
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pac import paths  # noqa: E402
+from pac.pbp_events import iter_games, fill_legacy_teams_and_rebounds  # noqa: E402
 HERE = paths.RAW                       # NBA.com player JSON dumps (_nba_pl_adv_*, _nba_pl_base_*) live in raw/
 RAW = paths.raw("nba_data_raw")        # play-by-play CSVs
 SLOPE = 0.25
