@@ -1,34 +1,38 @@
-# PAC — the replacement price of a scoring possession
+# PAC — Estimating the Opportunity Cost of Shooting Volume
 
 **What a possession returns when somebody else takes it, measured instead of assumed.**
 
-Every load-adjusted scoring statistic in basketball values an attempt against league-average
-efficiency. True shooting added, relative true shooting, points above average: each one asserts
-that if a replacement had taken the shot, it would have returned the league rate. Nobody measured
-whether that is true.
+Working paper v1 (October 1, 2026; abstract, full paper in progress):
+[court-share.com/luma/papers/opportunity-cost-of-shooting-volume](https://court-share.com/luma/papers/opportunity-cost-of-shooting-volume)
+· PDF: [docs/PAC_working_paper_v1.pdf](docs/PAC_working_paper_v1.pdf)
 
-This repository measures it.
+Every load-adjusted scoring statistic in basketball values an attempt against league-average
+efficiency. TS Points Added, relative true shooting, points above average: each one asserts that if
+a replacement had taken the shot, it would have returned the league rate. That is a price, set at
+`s = 0` and never measured. This repository measures it.
 
 ```
-s = 0.245        95% CI [0.204, 0.284]
+s = 0.257   95% CI [0.223, 0.291]    game-level design, 68,708 team-games, 108,895 rotation-player absences
+s = 0.245   95% CI [0.204, 0.284]    held-out design, 739 player-seasons, 10,676 games missed
+s = 0.25                             the price PAC uses (inside both intervals)
 ```
 
 For every 10 percentage points of his team's offense a player carries, the shots that replace him
 come back about 2.5 points per 100 worse than league average.
 
-Author: Ayomide Awoyemi (LUMA Basketball Research, court-share.com/luma).
-Data: NBA play-by-play, 1997-98 through 2025-26. 688,049 player-games, 198,480 lineup stints.
-All public sources. No tracking data.
+Author: Ayomide Awoyemi, LUMA Basketball Research (court-share.com/luma).
+Data: public NBA play-by-play and box scores, every regular season 1997-98 through 2025-26.
+No tracking data.
 
 ---
 
 ## The formula
 
 ```
-L        = TSA / P                      season share of on-court possessions
+L        = TSA / POSS                   season share of on-court possessions
 TSA      = FGA + 0.44 * FTA             shooting possessions consumed
-price(L) = 2*lgTS - s*L                 measured return on a redistributed possession
-PAC      = PTS - TSA * price(L)         Points Above Cost
+price(L) = 2*TS_league - s*L            what a redistributed possession returns
+PAC      = TS Points Added + s * TSA^2 / POSS      Points Above Cost, s = 0.25
 ```
 
 Break-even falls out by setting PAC to zero:
@@ -37,12 +41,15 @@ Break-even falls out by setting PAC to zero:
 rTS = -(s/2) * L
 ```
 
-At 35% share that is -4.4 true shooting points. A player carrying a third of his team's offense
-breaks even while shooting below league average, because the shots that replace him are worse.
+At s = 0.25 that is **-3.8 rTS at 30% share and -5.0 at 40%**, against 0 for TS Points Added. A
+player carrying a third of his team's offense breaks even while shooting below league average,
+because the shots that replace him are worse.
 
 `L` is the **season** share, never the night's share. The price is a property of the player's
 role; the quantity is per game. Pricing per night breaks the identity that per-game values sum to
 season values.
+
+A rotation player, throughout, is one with 10+ appearances and 4+ TSA per appearance.
 
 ---
 
@@ -61,131 +68,108 @@ population being measured is the teammates, not the star.
 
 ---
 
-## Reproduce the coefficient
+## The evidence
+
+**Primary design.** Team points per shooting possession in every team-game, 1997-98 to 2025-26
+(68,708 team-games), regressed on every rotation player's absence jointly (108,895 absences), after
+accounting for each absent player's own points and attempts. Roster-spell, opponent-season and
+season-month fixed effects; home, rest and opponent-absence controls; standard errors clustered by
+team-season (863 clusters; the cluster bootstrap agrees).
+
+**s = 0.257 [0.223, 0.291].**
+
+**Second, held-out design.** Predict team efficiency in the 10,676 games missed by 739 high-usage
+player-seasons, using only teammates' on-court rates, and score each candidate price against what
+happened. **s = 0.245 [0.204, 0.284].** Different design, different sample, same answer.
+
+| check | result |
+|---|---|
+| placebo: absences reassigned at random within each player's team tenure, 500 draws | gap at 30% share **0.098** vs placebo 95% range **[-0.011, 0.012]**, p = 0.002 |
+| 11 alternative specifications (FT weight 0.40 / 0.475, per possession used, team-month FE, drop last 15 games, drop COVID seasons, drop 10+ game absences, stricter / looser rotation filters, unweighted, franchise clusters) | s in **[0.217, 0.276]** |
+| leave-one-season-out prediction of absence games | share-dependent price beats league-average replacement in **26 of 29** held-out seasons |
+| pre-trend: he played, 2 games before an absence run | 0.009 [-0.010, 0.027], no effect |
+| absence game 1 / games 2-3 / games 4+ | 0.093 / 0.121 / 0.090: no decay, no sign of teams adapting it away |
+| low-assist scorers vs high-assist playmakers, gap at 30% share | **0.072** vs **0.106**; PAC's implied 0.075. PAC prices the scarcity; the playmakers' extra is creation value PAC does not price |
+
+### Table 1. Points per game a team loses when a player sits, against what each statistic says he is worth
+
+| absent player's share | absences | actually lost | TS Added says | PAC (s = 0.25) says |
+|---|---|---|---|---|
+| under 15% | 20,669 | -0.39 [-0.59, -0.19] | -0.08 | 0.10 |
+| 15-20% | 46,627 | -0.12 [-0.28, 0.03] | -0.21 | 0.10 |
+| 20-25% | 29,319 | 0.32 [0.13, 0.51] | -0.25 | 0.33 |
+| 25-30% | 9,543 | 2.00 [1.68, 2.32] | 0.07 | 1.14 |
+| **30% and up** | **2,737** | **3.52 [2.92, 4.12]** | **0.52** | **2.30** |
+
+Actually lost: change in team points per game per absent player in each share bin, same fixed
+effects and controls as the primary design (95% CI clustered by team-season). TS Points Added and
+PAC: the absent players' per-game values.
+
+![Figure 1: shooting-efficiency break-even by possession share](docs/pac_figure1_breakeven.png)
+
+**Figure 1.** Shooting-efficiency break-even by possession share, every qualified player-season 1997-98 to
+2025-26 (n = 6,315). Seasons above the solid line have positive PAC at s = 0.25; TS Points Added places
+every break-even at the dashed line.
+
+![Figure 2: measured replacement gap by share](docs/pac_figure2_price.png)
+
+**Figure 2.** What a player's shooting possessions return when he sits, relative to league average, by his
+possession share (non-parametric share bins, 95% CI clustered by team-season), against PAC's price 0.25·L
+and league-average replacement (TS Points Added, s = 0).
+
+Validation panels (free-intercept fit, event time around an absence run, the 500-draw placebo):
+[docs/pac_price_schedule.png](docs/pac_price_schedule.png).
+
+Full results: [docs/PAC_VALIDATED_NUMBERS.md](docs/PAC_VALIDATED_NUMBERS.md),
+[docs/_pac_gamelevel_results.md](docs/_pac_gamelevel_results.md),
+[docs/PAC_RECONCILIATION.md](docs/PAC_RECONCILIATION.md) (old record vs new).
+
+---
+
+## Reproduce
 
 ```bash
-# the headline number, held-out prediction, 739 carriers and 10,676 absences
+# primary, game-level design
+python scripts/_pacgl_fetch_espn.py      # schedules (dates for rest controls)
+python scripts/_pacgl_build.py           # team-game panel from play-by-play and box rows
+python scripts/_pac_gamelevel.py         # estimates, placebo, bootstrap, robustness, leave-one-season-out
+python scripts/_pac_vs_tsadd.py          # Table 1: PAC vs TS Added against what teams actually lose
+python scripts/_pac_how_sure.py          # known-answer test, hidden-confounder sensitivity
+
+# second, held-out design
 python scripts/_calib_sitout.py
 
-# pooled WLS through the origin, plus era splits and the placebo
-python scripts/_sitout_slope.py 2000 2025
-python scripts/_sitout_slope.py 2000 2025 --placebo
-
-# the in-game rest design and its placebo
-python scripts/_ingame_slope.py 2000 2025
-python scripts/_ingame_slope.py 2000 2025 --placebo
-
-# an independent implementation written without sight of the numbers above
-python scripts/_blind_sitout.py
-
-# build PAC for any season at the measured price
+# build PAC for any season at s = 0.25, and the cases below
 python scripts/_sv_pergame.py --years 2025
+python scripts/_pac_cases_025.py         # -> docs/_pac_cases_025.md
 ```
 
 `scripts/_sv_pergame.py` carries `SLOPE = 0.25` and a provenance header. It writes
 `_sv_pergame_{code}.json` per player-game and `_sv_season_{code}.json` per player-season.
 
 Raw play-by-play is not redistributed here. The scripts read `nba_data_raw/nbastats_{year}.csv`
-and the stint files built from it; see `docs/DATA.md`.
-
----
-
-## The evidence
-
-| design | data | events | s | 95% CI |
-|---|---|---|---|---|
-| **held-out prediction** | stints + box | 739 carrier-seasons, 10,676 absences | **0.245** | [0.204, 0.284] |
-| 10-fold CV, 20 shuffles | same | same | 0.233 (sd .006) | folds [0.214, 0.251] |
-| leave-one-season-out | same | 26 folds | 0.22-0.24 | beats 0 in 23/26 |
-| pooled WLS through origin | same | same | 0.233 | [0.192, 0.275] |
-| independent reimplementation | stints + box | 866 carriers, 10,525 absences | 0.28 | [0.22, 0.34] |
-| in-game rest | stints | 1,194 carriers, 2.2M bench attempts | 0.324 | [0.293, 0.353] |
-| teammate-absence instrument | box, 480,013 player-games | — | k = -0.30 TS/share | [-0.38, -0.22] |
-| next-season team efficiency | box, 832 pairs | — | 0.27 | flat |
-| **placebo**, fake absences from games played | stints + box | 5,677 | **0.004** | [-0.05, 0.06] |
-| **placebo**, random split of own stints | stints | 1,194 | **-0.066** | [-0.09, -0.03] |
-
-### The held-out curve
-
-Nothing is fitted. For each candidate price, predict team points per attempt in the games he sat,
-using only teammates' on-court rates, and score against what happened.
-
-| s | weighted MSE x 1e-3 |
-|---|---|
-| 0.00 | 2.01 |
-| 0.10 | 1.76 |
-| 0.20 | 1.64 |
-| **0.245** | **1.62** |
-| 0.30 | 1.64 |
-| 0.42 | 1.82 |
-| 0.50 | 2.04 |
-| 0.60 | 2.43 |
-
-**Zero is rejected. So is 0.50.** Mean residual crosses zero at 0.234.
-
-### Functional form is checked, not assumed
-
-Price minus observed return per attempt, by usage band:
-
-| band | absence design | in-game | placebo |
-|---|---|---|---|
-| 24-27% | .042 | .066 | .004 |
-| 27-30% | .080 | .110 | .016 |
-| 30-34% | .099 | .133 | -.008 |
-| 34%+ | .098 | .148 | -.075 |
-
-Monotone, no bend at the top.
-
-### The naive regression has the wrong sign
-
-Regressing efficiency on usage directly gives **+0.04**. Hot nights get more shots, so the raw
-scatter everyone runs is selection. Instrumenting a player's share with his absent teammates'
-attempts across 480,013 player-games gives **-0.30 [-0.38, -0.22]**. First stage: 15 absent
-teammate attempts raise your share by about 0.9 points.
-
-### Two designs, same carriers, different counterfactuals
-
-The absence and rest designs share **all 739 carriers**, yet per-carrier implied slopes correlate
-only **0.346** and the pooled estimates differ, **0.233 against 0.301** on that identical sample.
-A shared confounder moves both together; it cannot produce a stable wedge on identical units.
-Absence possessions go to the rotation, rest possessions go to the bench unit. PAC's counterfactual
-is the first, so 0.245 is the matched estimate and 0.324 is an upper bound.
+and the files built from it; see [docs/DATA.md](docs/DATA.md). The derived team-game panel export
+is pending.
 
 ---
 
 ## What the price does to the leaderboard
 
-| player-season | PPG rank | TS Add rank | PAC rank | of |
+Per-game values, ranked within season. Pool: 6,315 qualified player-seasons (40+ games, 2,500+
+possessions). Source: [docs/_pac_cases_025.md](docs/_pac_cases_025.md).
+
+| player-season | PPG rank | TS Added/g (rank) | PAC/g (rank) | of |
 |---|---|---|---|---|
-| Allen Iverson 2001-02 | 1 | **214** | **60** | 216 |
-| Russell Westbrook 2016-17 | 1 | 92 | 15 | 240 |
-| DeMar DeRozan 2016-17 | 5 | 107 | 28 | 240 |
-| Jaylen Brown 2025-26 | 4 | 168 | 33 | 236 |
-| Tyson Chandler 2011-12 | 102 | 4 | 5 | 179 |
-| Terry Rozier 2022-23 | 39 | 233 | 230 | 234 |
+| Allen Iverson 2001-02 | 1 | -1.78 (**214**) | +1.23 (**60**) | 216 |
+| Russell Westbrook 2016-17 | 1 | +0.24 (92) | +3.01 (15) | 240 |
+| DeMar DeRozan 2016-17 | 5 | +0.07 (107) | +2.19 (28) | 240 |
+| Jaylen Brown 2025-26 | 4 | -0.41 (168) | +1.82 (33) | 236 |
 
-DeRozan's nine Toronto seasons: **TS Add -132 points, PAC +730.** Same box scores.
+DeRozan's nine Toronto seasons (2009-10 to 2017-18): **TS Added -132 points, PAC +731.** Same box
+scores.
 
-Four of 218 player-seasons above 30% usage fall below break-even: T-Mac 2007-08, Kobe 2015-16,
-John Wall 2020-21, Michael Jordan 2001-02.
-
----
-
-## Every statistic implies a price
-
-Recovered by regressing each target on true-shooting-added and the load term as two free
-variables. This is what each statistic *pays* for load.
-
-| statistic | implied s | inside [0.20, 0.28] |
-|---|---|---|
-| TS Add / relative TS / points above average | 0.00 | no, by assumption |
-| net regularized plus-minus | 0.30 | marginal |
-| offensive RAPM | 0.36-0.62 | no |
-| offensive box plus-minus | 0.77 | no |
-| **this work** | **0.245** | by measurement |
-
-The counterfactual price is 0.25. Offensive impact pays about 0.45 for load because usage carries
-non-scoring value — creation, gravity, foul drawing — that this deliberately does not price.
+Four of 218 player-seasons at 30%+ share fall below break-even: Michael Jordan 2001-02, Tracy
+McGrady 2007-08, Kobe Bryant 2015-16, John Wall 2020-21.
 
 **The coefficient was never chosen by validation against an impact target.** Sweeping `s` against
 impact rewards load monotonically and would have produced a larger number. Measure on outcomes,
@@ -195,23 +179,36 @@ then validate, in that order.
 
 ## Limitations, stated plainly
 
-1. **Absences are not random.** Injury type, rest, tanking, opponent game-planning. The in-game
-   design uses no absences at all; the placebo returns 0.004; the instrument uses teammates'
-   absences rather than his.
-2. **Teams may adapt to anticipated absences.** Not yet tested. The planned test compares
-   announced absences against same-day scratches.
-3. **Linearity is checked by four usage bands**, which is thin for a curvature claim.
-4. **The price is a league average conditional on share**, not roster-specific. Per-player
-   estimates have 5 to 15 absences each and are noise. Same simplification replacement level makes
-   in WAR.
-5. **PAC is a scoring column, not a value metric.** No defense, no passing, no gravity. Jaylen
+1. **Linear through zero is not the best-fitting shape.** With a free intercept the total absence
+   cost is c = -0.077 [-0.113, -0.041] + 0.564·L, and a hinge at about 13% share fits best. So
+   0.25·L over-charges the 15-25% range. PAC keeps the one-parameter form for v1; the full paper
+   reports the alternatives.
+2. **Absences are not randomized.** Defenses: roster-spell and opponent fixed effects, rest
+   controls, the event study (no pre-trend, no decay), the placebo, injury-only runs, team-month
+   fixed effects.
+3. **One league-wide price**, not roster-specific. Team-specific prices were tested and are not
+   detectable.
+4. **`FGA + 0.44*FTA` is an approximation**, not rebuilt from play-by-play shot episodes. FT
+   weights 0.40-0.475 move the 30% gap by at most 0.003.
+5. **Gross points per shooting possession.** Per possession used (turnovers included), the gap at
+   30% share is 0.083.
+6. Game dates for 1997-2020 are matched from ESPN schedules (99.9% exact in a 2022-23 check); they
+   feed only the rest controls. 2025-26 on-court coverage is 81% of games.
+7. **PAC is a scoring column, not a value metric.** No defense, no passing, no gravity. Jaylen
    Brown won 2024 Finals MVP while ranking third on his own team in PAC.
-6. **`FGA + 0.44*FTA` is an approximation.** Rebuilding the denominator from play-by-play shot
-   events is the leading robustness check.
-7. **Gross points only.** The opponent's next possession is not netted, and offensive-rebound
-   continuations are not modelled.
-8. 2025-26 on-court coverage is 81% of games, so pace from summed on-court possessions is
-   unreliable that season.
+
+---
+
+## Retired from earlier versions of this repository
+
+An earlier README headlined s = 0.245 alone, backed by designs that no longer stand: an in-game
+rest design (0.324, contaminated by bench-unit lineups), a teammate-absence instrument (-0.30, no
+script, and it measures his own skill curve rather than the price), a next-season design (0.27,
+uninformative), a "per-carrier correlation of 0.346 that no confounder produces" (the logic does not
+hold), a U-shaped held-out MSE curve offered as proof (a quadratic loss is always U-shaped), the
+old placebos (0.004 / -0.066, replaced by the 500-draw permutation placebo), and an implied-price
+table for other statistics. None of these should be cited. The 0.245 held-out estimate stands, as
+the second design.
 
 ---
 
@@ -226,8 +223,8 @@ team attempts rather than on-court possessions, roughly a 1.4x unit mismatch.
 **Do not reuse 0.42.**
 
 The rule that came out of it, and that governs this repository: any coefficient that reaches a
-leaderboard needs a script that regenerates it from raw files, a placebo, a held-out prediction
-curve, and an independent reimplementation by someone given the data and the question but not the
+leaderboard needs a script that regenerates it from raw files, a placebo, a held-out prediction,
+and an independent reimplementation by someone given the data and the question but not the
 number. Notebook results are provisional until the script exists.
 
 ---
@@ -235,8 +232,9 @@ number. Notebook results are provisional until the script exists.
 ## Citation
 
 ```
-Awoyemi, A. (2026). The replacement price of a scoring possession in the NBA.
-LUMA Basketball Research. https://github.com/aayoawoyemi/pac
+Awoyemi, A. (2026). Estimating the Opportunity Cost of Shooting Volume. Working paper v1,
+LUMA Basketball Research. https://court-share.com/luma/papers/opportunity-cost-of-shooting-volume
+Code and data: https://github.com/aayoawoyemi/pac
 ```
 
 ## License
