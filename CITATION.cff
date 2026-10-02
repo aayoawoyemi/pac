@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite the working paper."
+title: "PAC: Estimating the Opportunity Cost of Shooting Volume (code and data)"
+authors:
+  - family-names: Awoyemi
+    given-names: Ayomide
+    affiliation: LUMA Basketball Research
+version: "1.0"
+date-released: "2026-10-01"
+license: MIT
+repository-code: "https://github.com/aayoawoyemi/pac"
+url: "https://court-share.com/luma/papers/opportunity-cost-of-shooting-volume"
+keywords: [basketball, NBA, true shooting, usage, opportunity cost, Points Above Cost]
+preferred-citation:
+  type: report
+  title: "Estimating the Opportunity Cost of Shooting Volume"
+  authors:
+    - family-names: Awoyemi
+      given-names: Ayomide
+  institution:
+    name: LUMA Basketball Research
+  year: 2026
+  month: 10
+  notes: "Working paper v1, October 1, 2026"
+  url: "https://court-share.com/luma/papers/opportunity-cost-of-shooting-volume"

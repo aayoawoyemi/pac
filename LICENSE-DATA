@@ -1,0 +1,13 @@
+Data license
+
+The derived data in data/ and results/ (the team-game panel, PAC values per player-season, the held-out carrier
+records, and every regenerated result) are Copyright (c) 2026 Ayomide Awoyemi and licensed under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+
+Attribution: Awoyemi, A. (2026). Estimating the Opportunity Cost of Shooting Volume. Working paper v1, LUMA
+Basketball Research. https://github.com/aayoawoyemi/pac
+
+This license covers only what this work adds. The underlying records (play-by-play, box scores, assist percentage
+from NBA.com; game dates from ESPN) remain subject to their providers' terms, and nothing here grants rights in them.
+
+Code is licensed separately under the MIT License (LICENSE).

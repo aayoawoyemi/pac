@@ -4,7 +4,7 @@
 
 Working paper v1 (October 1, 2026; abstract, full paper in progress):
 [court-share.com/luma/papers/opportunity-cost-of-shooting-volume](https://court-share.com/luma/papers/opportunity-cost-of-shooting-volume)
-· PDF: [docs/PAC_working_paper_v1.pdf](docs/PAC_working_paper_v1.pdf)
+· PDF: [paper/PAC_working_paper_v1.pdf](paper/PAC_working_paper_v1.pdf)
 
 Every load-adjusted scoring statistic in basketball values an attempt against league-average
 efficiency. TS Points Added, relative true shooting, points above average: each one asserts that if
@@ -105,23 +105,23 @@ Actually lost: change in team points per game per absent player in each share bi
 effects and controls as the primary design (95% CI clustered by team-season). TS Points Added and
 PAC: the absent players' per-game values.
 
-![Figure 1: shooting-efficiency break-even by possession share](docs/pac_figure1_breakeven.png)
+![Figure 1: shooting-efficiency break-even by possession share](paper/figures/figure1_breakeven.png)
 
 **Figure 1.** Shooting-efficiency break-even by possession share, every qualified player-season 1997-98 to
 2025-26 (n = 6,315). Seasons above the solid line have positive PAC at s = 0.25; TS Points Added places
 every break-even at the dashed line.
 
-![Figure 2: measured replacement gap by share](docs/pac_figure2_price.png)
+![Figure 2: measured replacement gap by share](paper/figures/figure2_price.png)
 
 **Figure 2.** What a player's shooting possessions return when he sits, relative to league average, by his
 possession share (non-parametric share bins, 95% CI clustered by team-season), against PAC's price 0.25·L
 and league-average replacement (TS Points Added, s = 0).
 
 Validation panels (free-intercept fit, event time around an absence run, the 500-draw placebo):
-[docs/pac_price_schedule.png](docs/pac_price_schedule.png).
+[results/price_schedule.png](results/price_schedule.png).
 
 Full results: [docs/PAC_VALIDATED_NUMBERS.md](docs/PAC_VALIDATED_NUMBERS.md),
-[docs/_pac_gamelevel_results.md](docs/_pac_gamelevel_results.md),
+[results/gamelevel.md](results/gamelevel.md),
 [docs/PAC_RECONCILIATION.md](docs/PAC_RECONCILIATION.md) (old record vs new).
 
 ---
@@ -129,34 +129,68 @@ Full results: [docs/PAC_VALIDATED_NUMBERS.md](docs/PAC_VALIDATED_NUMBERS.md),
 ## Reproduce
 
 ```bash
-# primary, game-level design
-python scripts/_pacgl_fetch_espn.py      # schedules (dates for rest controls)
-python scripts/_pacgl_build.py           # team-game panel from play-by-play and box rows
-python scripts/_pac_gamelevel.py         # estimates, placebo, bootstrap, robustness, leave-one-season-out
-python scripts/_pac_vs_tsadd.py          # Table 1: PAC vs TS Added against what teams actually lose
-python scripts/_pac_how_sure.py          # known-answer test, hidden-confounder sensitivity
-
-# second, held-out design
-python scripts/_calib_sitout.py
-
-# build PAC for any season at s = 0.25, and the cases below
-python scripts/_sv_pergame.py --years 2025
-python scripts/_pac_cases_025.py         # -> docs/_pac_cases_025.md
+git clone https://github.com/aayoawoyemi/pac && cd pac
+pip install -r requirements.txt          # Python 3.12
+python scripts/run_all.py                # ~20 min; ends by checking every number in the paper
 ```
 
-`scripts/_sv_pergame.py` carries `SLOPE = 0.25` and a provenance header. It writes
-`_sv_pergame_{code}.json` per player-game and `_sv_season_{code}.json` per player-season.
+`python scripts/run_all.py --fast` is a two-minute smoke test (20 placebo and bootstrap draws instead of 500 and 200).
+`python scripts/check_abstract_numbers.py` alone re-checks the committed results against the paper.
 
-Raw play-by-play is not redistributed here. The scripts read `nba_data_raw/nbastats_{year}.csv`
-and the files built from it; see [docs/DATA.md](docs/DATA.md). The derived team-game panel export
-is pending.
+Everything the analysis reads is in [data/](data/README.md) (17 MB): the team-game panel, PAC per player-season, the
+schedules and the held-out carriers. The raw play-by-play (3.7 GB) and lineup stints (352 MB) are not redistributed;
+only the build scripts 00-03 need them, and [data/README.md](data/README.md) says how to obtain them.
+
+| script | does | needs |
+|---|---|---|
+| `00_fetch_schedules.py` | ESPN game dates, for rest controls | internet |
+| `01_build_player_values.py` | per-game and per-season PAC inputs at s = 0.25; also computes PAC for any season | raw play-by-play |
+| `02_build_team_games.py` | the team-game panel | raw play-by-play |
+| `03_build_heldout_carriers.py` | the held-out design's 739 carrier-seasons | raw lineup stints |
+| `10_estimate_price.py` | primary design: s, placebo, bootstrap, 11 alternative specs, leave-one-season-out, event study | `data/` |
+| `11_heldout_design.py` | held-out design | `data/` |
+| `12_pac_vs_tsadd.py` | Table 1 | `data/`, `results/gamelevel.json` |
+| `13_cases.py` | Iverson, scoring champions, MVPs, named players | `data/` |
+| `14_scarcity.py` | low-assist scorers vs playmakers | `data/` |
+| `15_known_answer.py` | known-answer simulation, hidden-confounder sensitivity | `data/` |
+| `16_team_price.py` | per-team prices (not detectable) | `data/` |
+| `17_mechanism.py` | who shoots vs how well they shoot | `data/` |
+| `19_figures.py` | Figures 1 and 2 (pixel-identical to `paper/figures/`) | `data/`, `results/gamelevel.json` |
+
+### Every number in the paper, and where it comes from
+
+| paper | value | script | output |
+|---|---|---|---|
+| s, primary design | 0.257 [0.223, 0.291] | 10 | `results/gamelevel.json` `main.s_origin`, `s_origin_se` |
+| team-games, rotation-player absences | 68,708; 108,895 | 10 | `descriptives` |
+| s, held-out design | 0.245 [0.204, 0.284]; 739 player-seasons, 10,676 games | 11 | `results/heldout.md`, row `pooled` |
+| break-even at 30% / 40% share | -3.8 / -5.0 rTS | formula | rTS = -(0.25/2)·L |
+| placebo at 30% share | 0.098 vs [-0.011, 0.012], p = 0.002, 500 draws | 10 | `permutation.gap30` |
+| 11 alternative specifications | s in [0.217, 0.276] | 10 | `robustness[1:]` (`[0]` is the main spec) |
+| low-assist / PAC / playmakers at 30% | 0.072 / 0.075 / 0.106 | 14 | `results/scarcity.md` |
+| Table 1, incl. 3.52 / 0.52 / 2.30 at 30%+ | | 12 | `results/pac_vs_tsadd.md` section 1 |
+| Iverson 2001-02 | TS Added -1.78/g (214th of 216), PAC +1.23 (60th) | 13 | `results/cases.md` |
+| Figure 1 pool | 6,315 player-seasons | 13, 19 | `results/cases.md` |
+
+The held-out input `data/heldout/carriers.json` is the 2026-09-21 build that the paper's numbers come from; a rebuild
+on 2026-09-26 from regenerated per-game rows gave 0.244 [0.203, 0.282] (see [data/README.md](data/README.md)).
+
+```
+pac/        library code (paths, primary design, held-out design, PAC builder)
+scripts/    numbered entry points, run_all.py, check_abstract_numbers.py
+data/       inputs, with schemas in data/README.md
+results/    everything the scripts regenerate
+paper/      working paper PDF and figures
+archive/    retired designs, kept for the record (archive/README.md)
+docs/       PAC_VALIDATED_NUMBERS.md (full validated record), PAC_RECONCILIATION.md (old record vs new)
+```
 
 ---
 
 ## What the price does to the leaderboard
 
 Per-game values, ranked within season. Pool: 6,315 qualified player-seasons (40+ games, 2,500+
-possessions). Source: [docs/_pac_cases_025.md](docs/_pac_cases_025.md).
+possessions). Source: [results/cases.md](results/cases.md).
 
 | player-season | PPG rank | TS Added/g (rank) | PAC/g (rank) | of |
 |---|---|---|---|---|

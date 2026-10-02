@@ -1,0 +1,8 @@
+# Tested with Python 3.12.10 (Windows 11). Results in results/ were produced with exactly these versions.
+numpy==1.26.4
+pandas==2.3.3
+scipy==1.17.1
+matplotlib==3.10.7
+pyarrow==25.0.0
+# only for scripts/00_fetch_schedules.py
+requests==2.34.2

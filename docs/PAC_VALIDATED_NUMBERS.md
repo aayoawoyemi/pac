@@ -131,7 +131,7 @@ term is estimated.
 ## Is PAC better than TS Add / UW-rTS? (UW-rTS = TS Add / 100)
 
 What teams actually lose per game when a player sits (team points, same fixed effects and controls)
-vs what each stat says he is worth (`_pac_vs_tsadd.py`):
+vs what each stat says he is worth (`scripts/12_pac_vs_tsadd.py`):
 
 | absent player's share | his PPG | actually lost | TS Add says | PAC says |
 |---|---|---|---|---|
@@ -147,7 +147,7 @@ vs what each stat says he is worth (`_pac_vs_tsadd.py`):
   was estimated on absences); the published price, from the older design, shows the same pattern.
 - Year-over-year stability: PPG 0.86, PAC 0.77, TS Add 0.68.
 
-## Predicting games (`_pac_predict_games.py`)
+## Predicting games (`archive/scripts/_pac_predict_games.py`, hinge price)
 
 34,354 games, cross-fitted team offense/defense ratings, missing players subtracted at their per-game value:
 
@@ -170,7 +170,7 @@ Both rank players 0.991 like points (vPTS moves 0.7 points a game on average; 9 
 vPTS sums to the team's real score; PTS+ adds ~4.3 points per team-game that never happened. Keep points
 as the description and PAC as the verdict; vPTS is optional box-score packaging; drop PTS+.
 
-## Per-team prices: tested, not supported (`_pac_team_price.py`)
+## Per-team prices: tested, not supported (`scripts/16_team_price.py`)
 
 - one team-season's price has SE ±0.126 points per attempt, twice the effect itself
 - a team's first-half price predicts its second half at r = 0.03; team prices predict worse out of sample
@@ -180,7 +180,7 @@ as the description and PAC as the verdict; vPTS is optional box-score packaging;
 The price is structural, not organizational. This answers the deep-bench / thin-bench objection with a
 test. Power: franchise differences above ~±0.045 points per attempt (2 TS points) would have been seen.
 
-## How close to the true price? (`_pac_how_sure.py`)
+## How close to the true price? (`scripts/15_known_answer.py`)
 
 Known-answer test: real games, fixed effects, absences and noise; estimated effect removed, a known price
 planted, residuals reshuffled within team-season, 40 replicates each:
@@ -196,7 +196,7 @@ The method recovers every planted price, invents no effect when there is none, a
 there is none. Hidden-confounder robustness value: 5.8%. An unmeasured factor would have to be ~157x stronger
 than back-to-backs on team efficiency and ~15x stronger on absences to erase the slope.
 
-## Scarcity or lost playmaking? (`_pac_scarcity_forms.md`; supersedes the earlier version of this section)
+## Scarcity or lost playmaking? (`results/scarcity.md`; supersedes the earlier version of this section)
 
 The absence cost mixes the absorbed shots (possession scarcity) with the absent player's playmaking. By the absent
 player's AST% at the same share, shape left free:
@@ -221,18 +221,18 @@ came from a shared-threshold restriction and is retracted. See PAC_RECONCILIATIO
 - Gross points per shooting possession. Per possession used (including turnovers), the gap at 30% share is 0.083.
 - Dates: exact from the NBA CDN feed for 2021-22 onward. For 1997–2020 they come from matching ESPN schedules in game-ID order, which was 99.9% exact where checkable in a normal season (2022-23) and 98.9% in a COVID-postponement season (2021-22). They only feed the rest controls.
 
-## Reproduce (in `courtshare-backend/`, copies in `pac-release/scripts/`)
+## Reproduce (from the repository root; or just `python scripts/run_all.py`)
 
-    python _pacgl_fetch_espn.py        # ESPN schedules (dates only), ~3 min
-    python _pacgl_build.py             # team-game panel from raw PBP + box rows, ~1 min
-    python _pac_gamelevel.py           # everything above, 500 permutations + 200 bootstraps, ~17 min
-    python _pac_mechanical_split.py    # accounting coefficient by group, ~20 s
-    python _pac_cases.py               # Iverson / DeRozan / break-even under each schedule
-    python _pac_vs_tsadd.py            # PAC vs TS Add against what teams actually lose
-    python _pac_predict_games.py       # vPTS / PTS+, team win%, game prediction with absences
-    python _pac_team_price.py          # per-team and roster-based prices
-    python _pac_boards.py 2025 2007    # leaderboards, published vs validated
-    python _pac_examples.py            # MVPs, scoring champions, debates, teammate effect
+    python scripts/00_fetch_schedules.py # ESPN schedules (dates only), ~3 min
+    python scripts/02_build_team_games.py # team-game panel from raw PBP + box rows, ~1 min
+    python scripts/10_estimate_price.py        # everything above, 500 permutations + 200 bootstraps, ~17 min
+    python scripts/17_mechanism.py    # accounting coefficient by group, ~20 s
+    python archive/scripts/_pac_cases.py             # Iverson / DeRozan / break-even under each schedule
+    python scripts/12_pac_vs_tsadd.py            # PAC vs TS Add against what teams actually lose
+    python archive/scripts/_pac_predict_games.py       # vPTS / PTS+, team win%, game prediction with absences
+    python scripts/16_team_price.py          # per-team and roster-based prices
+    python archive/scripts/_pac_boards.py 2025 2007    # leaderboards, published vs validated
+    python archive/scripts/_pac_examples.py            # MVPs, scoring champions, debates, teammate effect
 
-Outputs: `_pac_gamelevel_results.md/.json`, `_pac_mechanical_split.md`, `_pac_cases_results.md`,
-`pac_price_schedule.png` (A: price schedule, B: event study, C: placebo).
+Outputs: `results/gamelevel.md/.json`, `results/mechanism.md`, `archive/docs/_pac_cases_results.md`,
+`results/price_schedule.png` (A: price schedule, B: event study, C: placebo).
