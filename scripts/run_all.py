@@ -25,6 +25,7 @@ STEPS = [
     ["16_team_price.py"],
     ["17_mechanism.py"],
     ["19_figures.py"],
+    ["20_out_of_sample.py"],   # post-submission validation, not in the paper
 ]
 if not FAST:
     STEPS.append(["check_abstract_numbers.py"])

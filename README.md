@@ -156,6 +156,7 @@ only the build scripts 00-03 need them, and [data/README.md](data/README.md) say
 | `16_team_price.py` | per-team prices (not detectable) | `data/` |
 | `17_mechanism.py` | who shoots vs how well they shoot | `data/` |
 | `19_figures.py` | Figures 1 and 2 (pixel-identical to `paper/figures/`) | `data/`, `results/gamelevel.json` |
+| `20_out_of_sample.py` | post-submission: price on 1997-2015 only, scored on 2015-2026; year-over-year stability | `data/` |
 
 ### Every number in the paper, and where it comes from
 
@@ -212,25 +213,69 @@ then validate, in that order.
 
 ---
 
+## Post-submission validation (2026-10-02, not in the working paper v1)
+
+The v1 abstract was submitted before this test existed; none of its numbers depend on it.
+`scripts/20_out_of_sample.py` -> [results/out_of_sample.md](results/out_of_sample.md).
+
+**Out-of-sample test of PAC as a scoring statistic.** Estimate the price on 1997-98 to 2014-15 only (s = 0.222
+[0.173, 0.271]), then score both statistics on 2015-16 to 2025-26, seasons the price never saw. Same regression and
+controls as Table 1, run on the test seasons alone.
+
+| absent player's share | absences | actually lost | TS Points Added says | PAC says (s = 0.222, out of sample) |
+|---|---|---|---|---|
+| under 15% | 11,692 | -0.36 [-0.65, -0.07] | -0.07 | 0.09 |
+| 15-20% | 23,271 | -0.14 [-0.37, 0.09] | -0.19 | 0.09 |
+| 20-25% | 13,157 | 0.47 [0.17, 0.78] | -0.26 | 0.27 |
+| 25-30% | 5,070 | 2.22 [1.78, 2.67] | 0.12 | 1.13 |
+| **30% and up** | **1,832** | **3.44 [2.76, 4.12]** | **0.63** | **2.21** |
+
+Absence-weighted mean absolute error: TS Points Added 0.54, PAC 0.38 points per game. At 30%+ share TS Points Added
+misses by 2.81 and PAC by 1.23. The improvement is concentrated at high share: under 15% share PAC misses by more than
+TS Points Added (0.45 vs 0.29), and from 15% to 20% the two are about equal. The script first reruns the same
+regression on all seasons and asserts it reproduces Table 1.
+
+**Year-over-year stability at s = 0.25** (qualified in consecutive seasons, n = 4,378): PPG 0.864, PAC per game
+0.747, TS Points Added per game 0.684.
+
+---
+
 ## Limitations, stated plainly
 
-1. **Linear through zero is not the best-fitting shape.** With a free intercept the total absence
-   cost is c = -0.077 [-0.113, -0.041] + 0.564·L, and a hinge at about 13% share fits best. So
-   0.25·L over-charges the 15-25% range. PAC keeps the one-parameter form for v1; the full paper
-   reports the alternatives.
-2. **Absences are not randomized.** Defenses: roster-spell and opponent fixed effects, rest
-   controls, the event study (no pre-trend, no decay), the placebo, injury-only runs, team-month
-   fixed effects.
-3. **One league-wide price**, not roster-specific. Team-specific prices were tested and are not
-   detectable.
-4. **`FGA + 0.44*FTA` is an approximation**, not rebuilt from play-by-play shot episodes. FT
-   weights 0.40-0.475 move the 30% gap by at most 0.003.
-5. **Gross points per shooting possession.** Per possession used (turnovers included), the gap at
-   30% share is 0.083.
-6. Game dates for 1997-2020 are matched from ESPN schedules (99.9% exact in a 2022-23 check); they
-   feed only the rest controls. 2025-26 on-court coverage is 81% of games.
-7. **PAC is a scoring column, not a value metric.** No defense, no passing, no gravity. Jaylen
-   Brown won 2024 Finals MVP while ranking third on his own team in PAC.
+1. **PAC is scoring accounting, nothing more.** It answers one question: what a player's scoring was worth, given
+   what replacing his shooting possessions costs. It is not a measure of total value. It does not price creation,
+   passing, defense, rebounding or gravity, and TS Points Added remains the exact description of shooting relative
+   to league average on his own attempts. Jaylen Brown won 2024 Finals MVP while ranking third on his own team in
+   PAC.
+2. **Part of the measured price is lost creation, not only scarcity.** Split by assist rate, the gap at 30% share is
+   0.072 for low-assist scorers and 0.106 for high-assist playmakers, and the slope on share is 0.081 vs 0.372. PAC's
+   0.25·L (0.075 at 30%) matches the scorers; for playmakers the extra cost is creation value PAC does not claim.
+   The design cannot fully separate the two.
+3. **The headline 0.257 is a restricted estimate.** It forces two things: the gap passes through zero, and the
+   absent player's own efficiency edge enters with coefficient 1. Both restrictions are rejected when freed:
+   - the free-intercept fit is gap = -0.077 [-0.113, -0.041] + 0.564·L, and a hinge at about 13% share fits best,
+     so 0.25·L over-charges the 15-25% range (mid-usage scorers are slightly over-credited);
+   - the own-efficiency coefficient is 0.78 [0.70, 0.87] rather than 1. By share it is 0.61 below 18% and
+     0.88 [0.71, 1.04] at 24%+, so for high-usage players the identity holds.
+
+   The two forms agree where PAC's rankings are decided: the gap at 30% share is 0.077 through zero and 0.092 free.
+   PAC keeps the one-parameter form for v1; the full paper reports the alternatives.
+4. **Table 1 is in-sample.** The price and Table 1 are estimated on the same absences, so PAC's agreement there is
+   partly built in. (TS Points Added never touches these absences, so its miss is not.) The out-of-sample test
+   above addresses this.
+5. **The price drifts upward over time.** Estimated on 1997-98 to 2014-15 alone it is 0.222; on 2015-16 to 2025-26
+   alone, 0.290. One price for all 29 seasons is a simplification.
+6. **Both statistics miss for low-usage players.** When a player under 15% share sits, teams score slightly more
+   (-0.36 points per game out of sample). Neither TS Points Added nor PAC captures it.
+7. **Absences are not randomized.** Defenses: roster-spell and opponent fixed effects, rest controls, the event
+   study (no pre-trend, no decay), the 500-draw placebo, injury-only runs, team-month fixed effects.
+8. **One league-wide price**, not roster-specific. Team-specific prices were tested and are not detectable.
+9. **`FGA + 0.44*FTA` is an approximation**, not rebuilt from play-by-play shot episodes. FT weights 0.40-0.475
+   move the 30% gap by at most 0.003.
+10. **Gross points per shooting possession.** Per possession used (turnovers included), the gap at 30% share is
+    0.083.
+11. Game dates for 1997-2020 are matched from ESPN schedules (99.9% exact in a 2022-23 check); they feed only the
+    rest controls. 2025-26 on-court coverage is 81% of games.
 
 ---
 
